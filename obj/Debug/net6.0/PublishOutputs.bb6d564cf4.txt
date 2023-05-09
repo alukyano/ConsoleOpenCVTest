@@ -1,0 +1,6 @@
+/home/alukyano/projects/net/ConsoleOpenCVTest/bin/Debug/net6.0/publish/ConsoleOpenCVTest
+/home/alukyano/projects/net/ConsoleOpenCVTest/bin/Debug/net6.0/publish/ConsoleOpenCVTest.dll
+/home/alukyano/projects/net/ConsoleOpenCVTest/bin/Debug/net6.0/publish/ConsoleOpenCVTest.deps.json
+/home/alukyano/projects/net/ConsoleOpenCVTest/bin/Debug/net6.0/publish/ConsoleOpenCVTest.runtimeconfig.json
+/home/alukyano/projects/net/ConsoleOpenCVTest/bin/Debug/net6.0/publish/ConsoleOpenCVTest.pdb
+/home/alukyano/projects/net/ConsoleOpenCVTest/bin/Debug/net6.0/publish/OpenCvSharp.dll
