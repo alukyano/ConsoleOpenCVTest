@@ -23,10 +23,15 @@ class Program
         string? parcelValue;
 
         
-        await proxyService.GetProxiesAsync();
+        await proxyService.GetProxiesAsync(true);
         // Command line parsing
         Arguments CommandLine=new Arguments(Args);
 
+        response = await MakeProxiedRequest("https://www.sberbank.ru");
+        Console.WriteLine(response);
+
+        response = await MakeProxiedRequest("https://pkk.rosreestr.ru");
+        Console.WriteLine(response);
         // check for type parameter
         if(CommandLine["type"] != null) 
         {
@@ -152,48 +157,10 @@ class Program
 
     static async Task <string> MakeProxiedRequest(string url)
     {
-        var proxy = new WebProxy("35.198.22.18",3129);
-        var httpClientHandler = new HttpClientHandler
-        {
-            Proxy = proxy,
-        };
-        using HttpClient client = new HttpClient(handler: httpClientHandler, disposeHandler: true);
-        var cts = new CancellationToken();
-        client.DefaultRequestHeaders.Accept.Clear();
-        client.DefaultRequestHeaders.Add("pragma", "no-cache");
-        client.DefaultRequestHeaders.Add("User-Agent", PKKConstants.USER_AGENT);
-        LogInfo(url);
-        var data ="";
-         try
-                {
-                    using (var request = new HttpRequestMessage(HttpMethod.Get, url))
-                    using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead, cts))
-                    {
-                        data = await response.Content.ReadAsStringAsync();
-                        LogInfo(data);
-                    }
-                }
-                catch (Exception e)
-                {
-                    while (e != null)
-                    {
-                        LogError(e.ToString());
-                        //e = e.InnerException;
-                    }
-                }
-        //var response = await client.GetStringAsync(url,cts);
-        //StreamReader reader = new StreamReader(stream); 
-        //string content = await reader.ReadToEndAsync();
-        //return response;
-         return data;    
-    }
-    static async Task<string> MakeProxiedParcelRequest(string? parcelCode)
-    {
         X509Certificate2 rootCertificate = new X509Certificate2(@"russian_trusted_root_ca_pem.crt");
         X509Certificate2 intermediateCertificate = new X509Certificate2(@"russian_trusted_sub_ca_pem.crt");
-
         HttpClientHandler httpClientHandler = new HttpClientHandler();
-        //httpClientHandler.UseCookies = true;
+        System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
         httpClientHandler.ServerCertificateCustomValidationCallback = (message, serverCert, chain, sslPolicyErrors) =>
         {
             if ((sslPolicyErrors & ~SslPolicyErrors.RemoteCertificateChainErrors) != 0) return false;
@@ -210,18 +177,75 @@ class Program
             } else return false;
         };
 
-        httpClientHandler.Proxy = new WebProxy("95.79.53.19", 8080);
+        //httpClientHandler.Proxy = new WebProxy("95.79.53.19", 8080);
+        //httpClientHandler.Proxy = new WebProxy("158.160.56.149", 8080);
+        //httpClientHandler.Proxy = new WebProxy("185.15.172.212", 3128);
+        httpClientHandler.Proxy = new WebProxy("103.157.117.227", 8080);
         //httpClientHandler.Proxy = proxyService.getRandomProxy();
-        proxyService.getRandomProxy();
+        Console.WriteLine("Using proxy "+ httpClientHandler.Proxy.GetProxy(new Uri(url)).ToString());
+        httpClientHandler.UseProxy = true;
+        using HttpClient client = new HttpClient(handler: httpClientHandler, disposeHandler: true);
+        client.Timeout = TimeSpan.FromSeconds(10);
+        client.DefaultRequestHeaders.Clear();
+        client.DefaultRequestHeaders.Add("X-requested-with", "XMLHttpRequest");
+        client.DefaultRequestHeaders.Accept.Clear();
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+        client.DefaultRequestHeaders.AcceptLanguage.Clear();
+        client.DefaultRequestHeaders.AcceptLanguage.Add(new StringWithQualityHeaderValue("ru"));
+        client.DefaultRequestHeaders.AcceptLanguage.Add(new StringWithQualityHeaderValue("ru-RU", 0.9));
+        client.DefaultRequestHeaders.AcceptEncoding.Clear();
+        client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+        client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
+        client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("br"));
+        client.DefaultRequestHeaders.Pragma.Clear();
+        client.DefaultRequestHeaders.Pragma.Add(new NameValueHeaderValue("no-cache"));
+        client.DefaultRequestHeaders.Referrer = new Uri(url);
+        client.DefaultRequestHeaders.UserAgent.Clear();
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(PKKConstants.USER_AGENT);
+        Console.WriteLine(client.DefaultRequestHeaders.ToString());
+
+        HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+        HttpContent content = response.Content;
+
+        // ... Check Status Code                                
+        Console.WriteLine("Response StatusCode: " + (int)response.StatusCode);
+
+        // ... Read the string.
+        string result = await content.ReadAsStringAsync();
+        return result;
+    }
+    static async Task<string> MakeProxiedParcelRequest(string? parcelCode)
+    {
+        X509Certificate2 rootCertificate = new X509Certificate2(@"russian_trusted_root_ca_pem.crt");
+        X509Certificate2 intermediateCertificate = new X509Certificate2(@"russian_trusted_sub_ca_pem.crt");
+        HttpClientHandler httpClientHandler = new HttpClientHandler();
+        httpClientHandler.ServerCertificateCustomValidationCallback = (message, serverCert, chain, sslPolicyErrors) =>
+        {
+            if ((sslPolicyErrors & ~SslPolicyErrors.RemoteCertificateChainErrors) != 0) return false;
+            if(chain is object)
+            {
+                chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+                chain.ChainPolicy.CustomTrustStore.Add(rootCertificate);
+                chain.ChainPolicy.ExtraStore.Add(intermediateCertificate);
+                if(serverCert is object)
+                {
+                    Console.WriteLine(chain.Build(serverCert));
+                    return chain.Build(serverCert);
+                } else return false;
+            } else return false;
+        };
+
+        //httpClientHandler.Proxy = new WebProxy("95.79.53.19", 8080);
+        //httpClientHandler.Proxy = new WebProxy("158.160.56.149", 8080);
+        //httpClientHandler.Proxy = new WebProxy("185.15.172.212", 3128);
+        httpClientHandler.Proxy = proxyService.getRandomProxy();
         Console.WriteLine("Using proxy "+ httpClientHandler.Proxy.GetProxy(new Uri("https://pkk.rosreestr.ru/")).ToString());
         httpClientHandler.UseProxy = true;
 
         using HttpClient client = new HttpClient(handler: httpClientHandler, disposeHandler: true);
-        client.Timeout = TimeSpan.FromSeconds(10);
-        //client.DefaultRequestVersion = HttpVersion.Version20;
-        //client.DefaultRequestHeaders.Add("pragma", "no-cache");
-        //client.DefaultRequestHeaders.Add("referer", "https://pkk.rosreestr.ru/");
-        //client.DefaultRequestHeaders.Add("user-agent", PKKConstants.USER_AGENT);
+        client.Timeout = TimeSpan.FromSeconds(15);
         client.DefaultRequestHeaders.Clear();
         client.DefaultRequestHeaders.Add("X-requested-with", "XMLHttpRequest");
         client.DefaultRequestHeaders.Accept.Clear();
@@ -239,7 +263,6 @@ class Program
         client.DefaultRequestHeaders.Pragma.Add(new NameValueHeaderValue("no-cache"));
         client.DefaultRequestHeaders.Referrer = new Uri("https://pkk.rosreestr.ru/");
         client.DefaultRequestHeaders.UserAgent.Clear();
-        //client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36");
         client.DefaultRequestHeaders.UserAgent.ParseAdd(PKKConstants.USER_AGENT);
         Console.WriteLine(client.DefaultRequestHeaders.ToString());
         string url = "https://pkk.rosreestr.ru/api/features/1/" + parcelCode;
