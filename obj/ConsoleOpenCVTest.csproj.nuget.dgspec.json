@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/alukyano/projects/net/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj": {}
+    "/home/alukyano/projects/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj": {}
   },
   "projects": {
-    "/home/alukyano/projects/net/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj": {
+    "/home/alukyano/projects/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/alukyano/projects/net/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj",
+        "projectUniqueName": "/home/alukyano/projects/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj",
         "projectName": "ConsoleOpenCVTest",
-        "projectPath": "/home/alukyano/projects/net/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj",
+        "projectPath": "/home/alukyano/projects/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj",
         "packagesPath": "/home/alukyano/.nuget/packages/",
-        "outputPath": "/home/alukyano/projects/net/ConsoleOpenCVTest/obj/",
+        "outputPath": "/home/alukyano/projects/ConsoleOpenCVTest/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/alukyano/.nuget/NuGet/NuGet.Config"

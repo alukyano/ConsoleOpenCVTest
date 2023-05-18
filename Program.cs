@@ -155,11 +155,18 @@ class Program
         return content;
     }
 
-    static async Task <string> MakeProxiedRequest(string url)
+    static async Task <string> MakeProxiedRequest(string? url)
     {
+        ArgumentNullException.ThrowIfNull(url);
+
+        HttpResponseMessage response;
+        HttpContent content;
+        HttpClientHandler httpClientHandler;
+
         X509Certificate2 rootCertificate = new X509Certificate2(@"russian_trusted_root_ca_pem.crt");
         X509Certificate2 intermediateCertificate = new X509Certificate2(@"russian_trusted_sub_ca_pem.crt");
-        HttpClientHandler httpClientHandler = new HttpClientHandler();
+        httpClientHandler = new HttpClientHandler();
+
         System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
         httpClientHandler.ServerCertificateCustomValidationCallback = (message, serverCert, chain, sslPolicyErrors) =>
         {
@@ -180,10 +187,11 @@ class Program
         //httpClientHandler.Proxy = new WebProxy("95.79.53.19", 8080);
         //httpClientHandler.Proxy = new WebProxy("158.160.56.149", 8080);
         //httpClientHandler.Proxy = new WebProxy("185.15.172.212", 3128);
-        httpClientHandler.Proxy = new WebProxy("103.157.117.227", 8080);
-        //httpClientHandler.Proxy = proxyService.getRandomProxy();
-        Console.WriteLine("Using proxy "+ httpClientHandler.Proxy.GetProxy(new Uri(url)).ToString());
-        httpClientHandler.UseProxy = true;
+        //httpClientHandler.Proxy = new WebProxy("103.157.117.227", 8080);
+        httpClientHandler.Proxy = proxyService.getRandomProxy();
+        string? proxystr = httpClientHandler.Proxy.GetProxy(new Uri(url)).ToString();
+        Console.WriteLine("Using proxy "+ proxystr);
+        httpClientHandler!.UseProxy = true;
         using HttpClient client = new HttpClient(handler: httpClientHandler, disposeHandler: true);
         client.Timeout = TimeSpan.FromSeconds(10);
         client.DefaultRequestHeaders.Clear();
@@ -206,15 +214,50 @@ class Program
         client.DefaultRequestHeaders.UserAgent.ParseAdd(PKKConstants.USER_AGENT);
         Console.WriteLine(client.DefaultRequestHeaders.ToString());
 
-        HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-        HttpContent content = response.Content;
+        try
+        {
+            response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode(); 
+            content = response.Content;
+            // ... Check Status Code                                
+            Console.WriteLine("Response StatusCode: " + (int)response.StatusCode);
+            // ... Read the string.
+            string result = await content.ReadAsStringAsync();
+            //dispose resources
+            httpClientHandler.Dispose();
+            client.Dispose();
 
-        // ... Check Status Code                                
-        Console.WriteLine("Response StatusCode: " + (int)response.StatusCode);
-
-        // ... Read the string.
-        string result = await content.ReadAsStringAsync();
-        return result;
+            return result;
+        }
+        catch (HttpRequestException exception)
+        {
+            LogInfo(exception.Message);
+            httpClientHandler.Dispose();
+            client.Dispose();
+            return "";
+            // Handle exception.
+        }
+        catch (TimeoutException exception)
+        {
+            LogInfo(exception.Message);
+            httpClientHandler.Dispose();
+            client.Dispose();
+            return "";
+        }
+        catch (OperationCanceledException exception)
+        {
+            LogInfo(exception.Message);
+            httpClientHandler.Dispose();
+            client.Dispose();
+            return "";
+        }
+        catch (Exception exception)
+        {
+            LogInfo(exception.Message);
+            httpClientHandler.Dispose();
+            client.Dispose();
+            return "";
+        }
     }
     static async Task<string> MakeProxiedParcelRequest(string? parcelCode)
     {
@@ -270,6 +313,10 @@ class Program
 
         HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         HttpContent content = response.Content;
+
+        //dispose resources
+        httpClientHandler.Dispose();
+        client.Dispose();
 
         // ... Check Status Code                                
         Console.WriteLine("Response StatusCode: " + (int)response.StatusCode);

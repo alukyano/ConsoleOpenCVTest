@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "CVMtTk+zDa+SeB0rC2PeUTm0N7wgms4a/lIzZpw4SVpo2vcRVqlM58eJufQNbSdYn2yqOPS3uf0TRXvETr56Uw==",
+  "dgSpecHash": "h/QCUwY0bqGwIJVyogMnr1WFvW3ypwKo/woVEeRU+p+E9RC28s2G+kKHb0vcvvWYG6RKE4IrHiKYT+Ob8/WsJg==",
   "success": true,
-  "projectFilePath": "/home/alukyano/projects/net/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj",
+  "projectFilePath": "/home/alukyano/projects/ConsoleOpenCVTest/ConsoleOpenCVTest.csproj",
   "expectedPackageFiles": [
     "/home/alukyano/.nuget/packages/opencvsharp4/4.7.0.20230115/opencvsharp4.4.7.0.20230115.nupkg.sha512",
     "/home/alukyano/.nuget/packages/system.memory/4.5.4/system.memory.4.5.4.nupkg.sha512",
